@@ -1,0 +1,10 @@
+Package: cloudcherry
+Title: Get CloudCherry into R
+Version: 1.0.0.1
+Authors@R: person("CloudCherry", "", email = "info@getcloudcherry.com", role = c("aut", "cre"))
+Description: CloudCherry is a Customer Experience Management platform that helps you measure experience across the customer journey, and derive insights that drive improvements. This package contains functions that help you get data out CloudCherry and into R for fun and profit!
+Depends: R (>= 3.2.3)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
