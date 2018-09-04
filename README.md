@@ -3,6 +3,8 @@ If you are here, you are probably looking for ways to get CloudCherry data into 
 This package is not yet on CRAN. To install the latest development version you can install from the cloudcherry github repository:
 
 ``` r
-# latest stable version
-install.packages("cloudcherry", repos = c(cloudcherry = "http://github.com/getcloudcherry/cloudcherry-r-sdk", getOption("repos")))
+# latest version from Github
+install.packages('devtools')
+library(devtools)
+install_github('cloudcherry-r-sdk','getcloudcherry')
 ```
