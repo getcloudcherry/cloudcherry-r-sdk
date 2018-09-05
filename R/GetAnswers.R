@@ -25,10 +25,25 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   
   options(stringsAsFactors = FALSE)
   
+  #Login token---------------------
+  
+  Loginbody = list('username' = 'rohan123','password' = 'Rohan@123', 'grant_type'='password')
+  
+  BearerToken <- POST('https://api.getcloudcherry.com/api/LoginToken',
+                      body=Loginbody, encode = 'form')
+  
+  BearerTokenToChar = rawToChar(BearerToken$content)
+  
+  BearerTokenToJson = fromJSON(BearerTokenToChar)
+  
+  bearer = BearerTokenToJson[1]
+  
+  #-----------------------------
+  
   url  <- "https://api.getcloudcherry.com"
   path <- "api/Questions/Active"
   
-  Questions = GET(url, path = path, authenticate(Username, Password), encode = "json")
+  Questions = GET(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")))
   
   if (Questions$status_code != 200){
     return(print("Authentication Failed"))
@@ -76,7 +91,7 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   
   body = list(afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
   
-  Responses = POST(url, path = path, authenticate(Username, Password), body = body, encode = "json")
+  Responses = POST(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")), body = body, encode = "json")
   
   ResponsesToChar = rawToChar(Responses$content)
   
