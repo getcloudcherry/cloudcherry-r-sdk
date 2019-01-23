@@ -103,6 +103,12 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   
   df = do.call(what = "rbind", args = lapply(ResponsesToJson[[7]], as.data.frame))
   
+  datetime_df = do.call(what = "rbind", args = lapply(ResponsesToJson[[4]], as.data.frame))
+  colnames(datetime_df) = c("DateTime")
+  
+  respid_df = do.call(what = "rbind", args = lapply(ResponsesToJson[[1]], as.data.frame))
+  colnames(respid_df) = c("ID")
+  
   DataList = list()
   
   tryCatch(for (i in 1:length(RequiredQidsVect))
@@ -114,10 +120,11 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
       DataList[[i]] = as.vector(df[df$questionId == RequiredQidsVect[i],]$textInput)
     }
   }, error = function(e) {print("Unable to fetch data"); return(NULL)})
-  
+
   OutputDf = as.data.frame(DataList)
-  
   colnames(OutputDf) = RequiredQidsVect
+  
+  OutputDf = cbind(respid_df, datetime_df, OutputDf)
   
   if (Randomize == TRUE){
     
