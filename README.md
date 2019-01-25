@@ -6,5 +6,5 @@ This package is not yet on CRAN. To install the latest development version you c
 # latest version from Github
 install.packages('devtools')
 library(devtools)
-install_github('cloudcherry-r-sdk','getcloudcherry')
+install_github('getcloudcherry/cloudcherry-r-sdk', force = T)
 ```
