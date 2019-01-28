@@ -27,7 +27,7 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   
   #Login token---------------------
   
-  Loginbody = list('username' = 'rohan123','password' = 'Rohan@123', 'grant_type'='password')
+  Loginbody = list('username' = Username,'password' = Password, 'grant_type'='password')
   
   BearerToken <- POST('https://api.getcloudcherry.com/api/LoginToken',
                       body=Loginbody, encode = 'form')
