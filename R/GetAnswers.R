@@ -7,14 +7,15 @@
 #' @param RequiredQidsVect a vector of strings specifying what all qids you want to export
 #' @param AfterDate String of start date in format - "YYYY-MM-DD"
 #' @param BeforeDate String of end date in format - "YYYY-MM-DD"
-#' @param MaxSampleSize specifies what is the maximum sample set you wish to export
-#' @param Randomize true if you wish to randomize the data in the given time range and then export
-#' @keywords GetCCDataSet
+#' @param MaxSampleSize specifies what is the maximum sample set you wish to export, by default returns all data
+#' @param Randomize true if you wish to randomize the data in the given time range and then export. by default set to False
+#' @param ReturnIntersectedSet set to true if you want to pull the data with an intersection (i.e., AND condition) between the Question ID's specified
+#' @keywords GetAnswers
 #' @return R DataFrame with CC data
 #' @export
 #' @examples
-#' GetCCDataSet("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE)
-GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDate, MaxSampleSize, Randomize)
+#' GetAnswers("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE, TRUE)
+GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDate, MaxSampleSize = 0, Randomize = FALSE, ReturnIntersectedSet = FALSE)
 {
   
   if("httr" %in% rownames(installed.packages()) == FALSE) {install.packages("httr")}
@@ -32,6 +33,11 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   BearerToken <- POST('https://api.getcloudcherry.com/api/LoginToken',
                       body=Loginbody, encode = 'form')
   
+  if(BearerToken$status_code != 200){
+    print("Authentication Failed")
+    return(NULL)
+  }
+  
   BearerTokenToChar = rawToChar(BearerToken$content)
   
   BearerTokenToJson = fromJSON(BearerTokenToChar)
@@ -44,13 +50,10 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   path <- "api/Questions/Active"
   
   Questions = GET(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")))
-  
-  if (Questions$status_code != 200){
-    return(print("Authentication Failed"))
-  }
-  
+
   if(is.null(Questions$content)){
-    return(print("Unable to fetch questions"))
+    print("Unable to fetch questions- try again- if problem persists contact CloudCherry")
+    return(NULL)
   }
   
   QuesToChar = rawToChar(Questions$content)
@@ -72,20 +75,22 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     else{
       NumberTypes[[i]] = FALSE
     }
-  }, error = function(e) {print("Unable to identify qids specified"); return(NULL)})
+  }, error = function(e) {print(paste("Unable to identify- ", RequiredQidsVect[i], " check if QuestionID present in account", sep = "")); return(NULL)})
   
   url  <- "https://api.getcloudcherry.com"
   path <- "api/Answers"
   
   QuestionFilter = list()
   
-  for (i in 1:length(RequiredQidsVect))
-  {
-    if(NumberTypes[[i]] == TRUE){
-      QuestionFilter[[i]] = list(questionId = RequiredQidsVect[i], answerCheck = list("gt"), number = -1)
-    }
-    else{
-      QuestionFilter[[i]] = list(questionId = RequiredQidsVect[i], answerCheck = list("Any Text"))
+  if(ReturnIntersectedSet == TRUE){
+    for (i in 1:length(RequiredQidsVect))
+    {
+      if(NumberTypes[[i]] == TRUE){
+        QuestionFilter[[i]] = list(questionId = RequiredQidsVect[i], answerCheck = list("gt"), number = -1)
+      }
+      else{
+        QuestionFilter[[i]] = list(questionId = RequiredQidsVect[i], answerCheck = list("Any Text"))
+      }
     }
   }
   
@@ -98,35 +103,46 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   ResponsesToJson = fromJSON(ResponsesToChar)
   
   if (is.null(ResponsesToJson)){
+    print("Unable to fetch responses. Make sure data is present in the account for the specified date range or try setting argument 'ReturnIntersectedSet' to False")
     return(NULL)
   }
-  
-  df = do.call(what = "rbind", args = lapply(ResponsesToJson[[7]], as.data.frame))
-  
-  datetime_df = do.call(what = "rbind", args = lapply(ResponsesToJson[[4]], as.data.frame))
-  colnames(datetime_df) = c("DateTime")
-  
-  respid_df = do.call(what = "rbind", args = lapply(ResponsesToJson[[1]], as.data.frame))
-  colnames(respid_df) = c("ID")
-  
-  DataList = list()
-  
-  tryCatch(for (i in 1:length(RequiredQidsVect))
-  {
-    if(NumberTypes[[i]] == TRUE){
-      DataList[[i]] = as.vector(df[df$questionId == RequiredQidsVect[i],]$numberInput)
-    }
-    else{
-      DataList[[i]] = as.vector(df[df$questionId == RequiredQidsVect[i],]$textInput)
-    }
-  }, error = function(e) {print("Unable to fetch data"); return(NULL)})
 
-  OutputDf = as.data.frame(DataList)
-  colnames(OutputDf) = RequiredQidsVect
+  OutputDf = data.frame(matrix(vector(), 0, length(RequiredQidsVect) + 3,
+                               dimnames=list(c(), c(c("ID", "DateTime", "Questionnaire"), RequiredQidsVect))),
+                        stringsAsFactors=F)
   
-  OutputDf = cbind(respid_df, datetime_df, OutputDf)
+  tryCatch(for (i in 1:nrow(ResponsesToJson))
+  {
+    row = list()
+    
+    row[[1]] = ResponsesToJson$id[i]
+    row[[2]] = ResponsesToJson$responseDateTime[i]
+    row[[3]] = ResponsesToJson$locationId[i]
+    
+    for (j in 1:length(RequiredQidsVect)){
+      if (RequiredQidsVect[j] %in% ResponsesToJson[[7]][i][[1]]$questionId){
+        if (NumberTypes[[j]] == TRUE){
+          row[[j+3]] = ResponsesToJson[[7]][i][[1]][ResponsesToJson[[7]][i][[1]]$questionId == RequiredQidsVect[j],]$numberInput
+        }
+        else{
+          row[[j+3]] = ResponsesToJson[[7]][i][[1]][ResponsesToJson[[7]][i][[1]]$questionId == RequiredQidsVect[j],]$textInput
+        }
+      }
+      else{
+        row[[j+3]] = NA
+      }
+    }
+    
+    OutputDf[i,] = row
+  }, error = function(e) {print("Unable to fetch data"); return(NULL)})
+  
+  colnames(OutputDf) = c(c("ID", "DateTime", "Questionnaire"), RequiredQidsVect)
   
   if (Randomize == TRUE){
+    
+    if (MaxSampleSize == 0){
+      MaxSampleSize = nrow(OutputDf)
+    }
     
     if (MaxSampleSize > nrow(OutputDf)){
       SampledData = OutputDf[sample(nrow(OutputDf), nrow(OutputDf), replace = F), ]
@@ -140,6 +156,11 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     return(SampledData)
   }
   else{
-    return(head(OutputDf, MaxSampleSize))
-  }
+    if (MaxSampleSize == 0){
+      return(OutputDf)
+    }
+    else{
+      return(head(OutputDf, MaxSampleSize))
+    }
+    }
 }
