@@ -10,12 +10,13 @@
 #' @param MaxSampleSize specifies what is the maximum sample set you wish to export, by default returns all data
 #' @param Randomize true if you wish to randomize the data in the given time range and then export. by default set to False
 #' @param ReturnIntersectedSet set to true if you want to pull the data with an intersection (i.e., AND condition) between the Question ID's specified
+#' @param Questionnaires this is a vector of questionnaires from which you would want to pull data
 #' @keywords GetAnswers
 #' @return R DataFrame with CC data
 #' @export
 #' @examples
-#' GetAnswers("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE, TRUE)
-GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDate, MaxSampleSize = 0, Randomize = FALSE, ReturnIntersectedSet = FALSE)
+#' GetAnswers("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE, TRUE, c("Q1"))
+GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDate, MaxSampleSize = 0, Randomize = FALSE, ReturnIntersectedSet = FALSE, Questionnaires = NULL)
 {
   
   if("httr" %in% rownames(installed.packages()) == FALSE) {install.packages("httr")}
@@ -50,7 +51,7 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   path <- "api/Questions/Active"
   
   Questions = GET(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")))
-
+  
   if(is.null(Questions$content)){
     print("Unable to fetch questions- try again- if problem persists contact CloudCherry")
     return(NULL)
@@ -94,7 +95,15 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     }
   }
   
-  body = list(afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
+  LocationList = list()
+  
+  if (!is.null(Questionnaires) | length(Questionnaires) != 0){
+    for (i in 1:length(Questionnaires)){
+      LocationList[[i]] = Questionnaires[i]
+    }
+  }
+  
+  body = list(location = LocationList, afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
   
   Responses = POST(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")), body = body, encode = "json")
   
@@ -106,7 +115,7 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     print("Unable to fetch responses. Make sure data is present in the account for the specified date range or try setting argument 'ReturnIntersectedSet' to False")
     return(NULL)
   }
-
+  
   OutputDf = data.frame(matrix(vector(), 0, length(RequiredQidsVect) + 3,
                                dimnames=list(c(), c(c("ID", "DateTime", "Questionnaire"), RequiredQidsVect))),
                         stringsAsFactors=F)
@@ -162,5 +171,5 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     else{
       return(head(OutputDf, MaxSampleSize))
     }
-    }
+  }
 }
