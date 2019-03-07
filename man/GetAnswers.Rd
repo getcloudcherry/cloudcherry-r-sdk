@@ -5,7 +5,8 @@
 \title{Export data from your CC dashboard}
 \usage{
 GetAnswers(Username, Password, RequiredQidsVect, AfterDate, BeforeDate,
-  MaxSampleSize = 0, Randomize = FALSE, ReturnIntersectedSet = FALSE)
+  MaxSampleSize = 0, Randomize = FALSE, ReturnIntersectedSet = FALSE,
+  Questionnaires = NULL)
 }
 \arguments{
 \item{Username}{your CC username}
@@ -23,6 +24,8 @@ GetAnswers(Username, Password, RequiredQidsVect, AfterDate, BeforeDate,
 \item{Randomize}{true if you wish to randomize the data in the given time range and then export. by default set to False}
 
 \item{ReturnIntersectedSet}{set to true if you want to pull the data with an intersection (i.e., AND condition) between the Question ID's specified}
+
+\item{Questionnaires}{this is a vector of questionnaires from which you would want to pull data}
 }
 \value{
 R DataFrame with CC data
@@ -34,6 +37,6 @@ This function allows you to export data by specifying what question Ids you want
 Install the following packages- httr, jsonlite before you use this. Performance depends on how much data is present in the specified time frame.
 }
 \examples{
-GetAnswers("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE, TRUE)
+GetAnswers("username", "password", c("59df48ea81180318b06d0199", "59df48ea81180318b06d019a"), "2018-01-14", "2018-05-15", 2000, TRUE, TRUE, c("Q1"))
 }
 \keyword{GetAnswers}
