@@ -103,11 +103,23 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     }
   }
 
-  d = toString(as.Date(AfterDate, format = "%Y-%m-%d")-1)
+  processDate = function(InputStringDate){
 
-  AfterDate = paste(d, "T18:30:00.000Z", sep = "")
+    InputStringDate = paste(InputStringDate, "23:59:59", sep = " ")
 
-  BeforeDate = paste(BeforeDate, "T18:29:59.999Z", sep = "")
+    d = as.POSIXct(InputStringDate, format="%Y-%m-%d %H:%M:%S")
+
+    attr(d, "tzone") <- "UTC"
+
+    return(gsub("[+]", ".", c(toString(strftime(d , "%Y-%m-%dT%H:%M:%S%zZ", tz = "UTC"))))[1])
+  }
+
+  AfterDate = processDate(AfterDate)
+
+  BeforeDate = processDate(BeforeDate)
+
+  print(AfterDate)
+  print(BeforeDate)
 
   body = list(location = LocationList, afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
 
