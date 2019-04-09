@@ -103,9 +103,14 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     }
   }
 
-  processDate = function(InputStringDate){
+  processDate = function(InputStringDate, IsAfterDate){
 
-    InputStringDate = paste(InputStringDate, "23:59:59", sep = " ")
+    if (IsAfterDate == TRUE){
+      InputStringDate = paste(InputStringDate, "00:00:01", sep = " ")
+    }
+    else{
+      InputStringDate = paste(InputStringDate, "23:59:59", sep = " ")
+    }
 
     d = as.POSIXct(InputStringDate, format="%Y-%m-%d %H:%M:%S")
 
@@ -114,9 +119,9 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     return(gsub("[+]", ".", c(toString(strftime(d , "%Y-%m-%dT%H:%M:%S%zZ", tz = "UTC"))))[1])
   }
 
-  AfterDate = processDate(AfterDate)
+  AfterDate = processDate(AfterDate, T)
 
-  BeforeDate = processDate(BeforeDate)
+  BeforeDate = processDate(BeforeDate, F)
 
   body = list(location = LocationList, afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
 
