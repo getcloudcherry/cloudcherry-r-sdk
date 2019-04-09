@@ -118,9 +118,6 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
 
   BeforeDate = processDate(BeforeDate)
 
-  print(AfterDate)
-  print(BeforeDate)
-
   body = list(location = LocationList, afterdate = AfterDate, beforedate = BeforeDate, filterquestions = QuestionFilter)
 
   Responses = POST(url, path = path, add_headers(Authorization = paste("Bearer", bearer, sep = " ")), body = body, encode = "json")
