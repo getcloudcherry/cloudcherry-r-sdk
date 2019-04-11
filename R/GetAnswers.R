@@ -63,9 +63,10 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
 
   QidTypeDf = cbind(do.call(what = "rbind",
                             args = lapply(QuesToJson[[1]], as.data.frame)), do.call(what = "rbind",
-                                                                                    args = lapply(QuesToJson[[8]], as.data.frame)))
+                                                                                    args = lapply(QuesToJson[[8]], as.data.frame)),
+                    do.call(what = "rbind", args = lapply(QuesToJson[[35]], as.data.frame)))
 
-  colnames(QidTypeDf) = c("id", "type")
+  colnames(QidTypeDf) = c("id", "type", "note")
 
   NumberTypes = list()
 
@@ -165,7 +166,20 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
     OutputDf[i,] = row
   }, error = function(e) {print("Unable to fetch data"); return(NULL)})
 
-  colnames(OutputDf) = c(c("ID", "DateTime", "Questionnaire"), RequiredQidsVect)
+  ColHeaders = c()
+
+  for (i in 1:length(RequiredQidsVect)){
+    if (is.na(QidTypeDf[QidTypeDf$id == RequiredQidsVect[i],]$note) == F){
+      ColHeaders = c(ColHeaders, QidTypeDf[QidTypeDf$id == RequiredQidsVect[i],]$note)
+    }
+    else{
+      ColHeaders = c(ColHeaders, RequiredQidsVect[i])
+    }
+  }
+
+  ColHeaders = gsub(" ", "_", ColHeaders)
+
+  colnames(OutputDf) = c(c("ID", "DateTime", "Questionnaire"), ColHeaders)
 
   if (Randomize == TRUE){
 
