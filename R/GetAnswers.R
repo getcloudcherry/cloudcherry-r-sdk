@@ -62,9 +62,9 @@ GetAnswers <- function(Username, Password, RequiredQidsVect, AfterDate, BeforeDa
   QuesToJson = fromJSON(QuesToChar)
 
   QidTypeDf = cbind(do.call(what = "rbind",
-                            args = lapply(QuesToJson[[1]], as.data.frame)), do.call(what = "rbind",
-                                                                                    args = lapply(QuesToJson[[8]], as.data.frame)),
-                    do.call(what = "rbind", args = lapply(QuesToJson[[35]], as.data.frame)))
+                            args = lapply(QuesToJson[["id"]], as.data.frame)), do.call(what = "rbind",
+                                                                                    args = lapply(QuesToJson[["displayType"]], as.data.frame)),
+                    do.call(what = "rbind", args = lapply(QuesToJson[["note"]], as.data.frame)))
 
   colnames(QidTypeDf) = c("id", "type", "note")
 
